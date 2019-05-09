@@ -5,6 +5,7 @@ import time
 from autoencoder import *
 import sys
 import random
+import numpy as np
 
 
 def get_next_batch(dataset, batch_size,step,ind):
@@ -110,39 +111,72 @@ def train(nonmissing_perc,dataset_train,dataset_test,autoencoder_fun, restore=Fa
 #with tf.Graph().as_default(): 
 if __name__ == '__main__':
 
-        input_name=sys.argv[1] # data
-        output_path=sys.argv[2] #'imputationmodel.ckpt'
-        feature_size=sys.argv[3] #Dimension of the feature, 17176
-        nonmissing_perc=sys.argv[4] #Percent of non-missing elements in the data, 0.7
-        batch_size=sys.argv[5] #128
-        lr=sys.argv[6] #0.1
-        num_epochs=sys.argv[7] #450
+        input_name='/home/safeer/Documents/QCRI/datasets/AbsenteeismMissingData.csv'# data set
+        output_path='imputationmodel.ckpt' #'imputationmodel.ckpt'
+        feature_size=20 #Dimension of the feature, 17176
+        nonmissing_perc=0.7 #Percent of non-missing elements in the data, 0.7
+        batch_size=20 #128
+        learning_rate = 0.1 #0.1
+        num_epochs = 450 #450
 		
-        df= pd.read_csv(input_name)  
-        df.drop(df.columns[[0]], axis=1, inplace=True)
-   
+        df = pd.read_csv(input_name)  
+        #print(df,"\n\n\n") 
+        df = df.iloc[:,1:]
+
+        #random generation of missing values for testing purposes
+        '''random.seed(10)
+        rows = list(range(df.shape[0]))
+        columns = list(range(df.shape[1]))
+
+        
+        for i in range(df.shape[0]) :
+
+            y = random.choice(columns)
+
+            while df.iloc[i,y] == None :
+                    y = random.choice(columns)
+            
+
+            print(i,y,df.iloc[i,y])
+            df.iloc[i,y] = None
+                    
+                    #df.iloc[i,y] = None
+
+
+        print(df)
+        df.to_csv("AbsenteeismMissingData.csv")'''
+
+        non_missing_values =(df.count(axis=1).sum())
+        nonmissing_perc = non_missing_values/(df.shape[0]*df.shape[1])
+        print("size = ",(df.shape[0]*df.shape[1]))
+        print("non_missing percent: ", nonmissing_perc)
+
         ####Create set for training & validation, and for testing
         arr=list(range(df.shape[0]))
         random.seed(1)
         random.shuffle(arr)
-        use_ind=arr[0:int(df.shape[0]*0.75)]
-        holdout_ind=arr[int(df.shape[0]*0.75):len(arr)]
-        df_use = df.iloc[use_ind]
-        df_holdout = df.iloc[holdout_ind]
+        train_ind=arr[0:int(df.shape[0]*0.75)]
+        test_ind=arr[int(df.shape[0]*0.75):len(arr)]
+        df_train = df.iloc[train_ind]
+        df_test = df.iloc[test_ind]
       
        
         ########       
-        arr=list(range(df_use.shape[0]))
+        arr=list(range(df_train.shape[0]))
         random.seed(1)
         random.shuffle(arr)
-        train_ind=arr[0:int(df_use.shape[0]*0.8)]
-        test_ind=arr[int(df_use.shape[0]*0.8):len(arr)]
-        dataset_train = df_use.iloc[train_ind]
-        dataset_test = df_use.iloc[test_ind]
+        train_ind=arr[0:int(df_train.shape[0]*0.8)]
+        test_ind=arr[int(df_train.shape[0]*0.8):len(arr)]
+        dataset_train = df_train.iloc[train_ind]
+        dataset_test = df_train.iloc[test_ind]
         
         
         batch_shape = (batch_size, feature_size)
         np.set_printoptions(threshold=np.inf)
+        #print(df,"\n\n\n")
+
+        #print(dataset)
+
         tf.reset_default_graph()
         loss_val_list_train, loss_val_list_test=train(nonmissing_perc,dataset_train,dataset_test,autoencoder_fun=autoencoder4_d, sav=True,restore=False, checkpoint_file=output_path)  
         #np.savetxt("trainloss.csv", loss_val_list_train, delimiter="\t")
