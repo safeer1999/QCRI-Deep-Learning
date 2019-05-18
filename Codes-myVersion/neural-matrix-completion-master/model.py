@@ -73,6 +73,12 @@ class NMC():
         init = tf.global_variables_initializer()
         self.sess.run(init)
         self.saver = tf.train.Saver(max_to_keep=10)
+
+        #TensorBoard Code
+        self.writer = tf.summary.FileWriter("./NMC_graph",self.sess.graph)
+        self.scalar_summary = tf.summary.scalar(name = "Loss", tensor = tf.reduce_sum(self.total_loss))
+
+
         return None
 
     def parse_model_configs(self, cfg):
@@ -140,6 +146,7 @@ class NMC():
                 output = self.transfer(output)
         output = tf.reshape(output, [-1, output.shape[1].value * n_filters[-1]])
         return output
+
     
     def build_recon_cosine(self, latent_x, latent_y):
         ''' use cosine similarity as reconstruction (range [-1,1])
@@ -147,9 +154,11 @@ class NMC():
         l2_norm_lx = tf.nn.l2_normalize(latent_x, dim=1)
         l2_norm_ly = tf.nn.l2_normalize(latent_y, dim=1)
         recon = tf.matmul(l2_norm_lx, l2_norm_ly, transpose_b=True) # N x M
+
         return recon
 
     def build_recon_loss(self, R, recon, mask):
+        #R = tf.Print(R,[R])
         diff = R - recon
         sq_diff = tf.square(diff)
         loss = tf.reduce_sum(tf.multiply(mask, sq_diff)) / tf.reduce_sum(mask)
@@ -157,10 +166,15 @@ class NMC():
         return loss
 
 
-    def partial_fit(self, x, y, R, mask, lr):
+    def     partial_fit(self, x, y, R, mask, lr):
         step = self.sess.run(self.global_step)
-        loss, recons, _ = self.sess.run([self.total_loss, self.recons, self.train_opt], 
-            feed_dict={self.x:x, self.y:y, self.R:R, self.mask:mask, self.lr:lr, self.is_training:True})
+        loss_summary, loss, recons, _ = self.sess.run([self.scalar_summary, self.total_loss, self.recons, self.train_opt], feed_dict={self.x:x, self.y:y, self.R:R, self.mask:mask, self.lr:lr, self.is_training:True})
+
+
+        #TensorBoard Code
+        #loss_summary_val = self.sess.run([self.scalar_summary])
+        self.writer.add_summary(loss_summary, step)
+
         return loss, recons, step
 
     def embed_x(self, x):

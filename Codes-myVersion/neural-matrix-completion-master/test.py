@@ -86,11 +86,15 @@ def main(unused_argv):
     count = np.sum((tr_mask + val_mask).multiply(te_mask))
     assert count == 0, 'Train and test overlap !!!'
 
-    X, R_, tr_mask, te_mask = prepare_data(R, tr_mask, te_mask)
-    print('Finished preparing data')
+    print(te_mask.shape)
+    print(tr_mask.shape)
+    print(R.shape)
+
+    #X, R_, tr_mask, te_mask = prepare_data(R, tr_mask, te_mask)
+    #print('Finished preparing data')
 
     # load model 
-    model = NMC(X.shape[1], X.shape[0], cfgs, phase='test')
+    '''model = NMC(X.shape[1], X.shape[0], cfgs, phase='test')
 
     snapshot_fname = tf.train.latest_checkpoint(FLAGS.snapshot_dir)
     assert snapshot_fname != None, 'No model found'
@@ -113,6 +117,6 @@ def main(unused_argv):
     print('Testing')
     print('RMSE - MAE : %f - %f' %(rmse_te, mae_te))    
     print('--------------------------------')
-    
+'''    
 if __name__ == '__main__':
     tf.app.run()

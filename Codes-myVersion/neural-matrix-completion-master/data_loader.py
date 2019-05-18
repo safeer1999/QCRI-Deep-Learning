@@ -45,6 +45,7 @@ class DataLoader():
         print('Finished initializing indices')
 
     def split(self):
+        print("\n\n",self.R.shape,"\n",self.train_mask.shape,"\n\n")
         self.R_tr_unnormalized = self.R.multiply(self.train_mask)  
         self.R_val_unnormalized = self.R.multiply(self.val_mask)
         self.X_tr = self.R_tr_unnormalized.copy()
@@ -144,19 +145,32 @@ class DataLoader():
         x_indices, start_x, flag_x = self.get_toread_indices(start_x, all_x_indices, bs_x)
         y_indices, start_y, flag_y = self.get_toread_indices(start_y, all_y_indices, bs_y)
 
+        #print(x_indices.shape)
+        #print(y_indices.shape,"\n")
+
         start = time.time()
         x = self.X_tr[x_indices,:].todense()
         y = self.Y_tr[y_indices,:].todense()
         if verbose:
             print('Load dense x and y takes %f s' %(time.time() - start))
 
+        #print(full_R)
+
         R = self.get_elements_vectorized(full_R, x_indices, y_indices)
         mask = self.get_elements_vectorized(full_mask, x_indices, y_indices)
+        '''print("--------------------------------------------------------------------------")
+
+        print(R)
+
+        print("---------------------------------------------------------------------------")
+        print("---------------------------------------------------------------------------")'''
         
         start = time.time()
         # scale R to be in range [-1,1]
         mid = (self.max_val + self.min_val) / 2
         R = (R - mid) / (mid - self.min_val)
+
+
 
         if dataset == 'train':
             self.current_X_tr_ind = start_x
@@ -171,4 +185,4 @@ class DataLoader():
             if flag_y:
                 self.shuffle_indices(for_y=True)
         flag = flag_x or flag_y
-        return x, y, R, mask, flag
+        return x, y, R, mask, flag,x_indices, y_indices
